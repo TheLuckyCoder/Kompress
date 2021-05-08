@@ -40,3 +40,16 @@ dependencies {
 
     implementation("androidx.annotation:annotation:1.2.0")
 }
+
+afterEvaluate {
+    publishing {
+        publications {
+            create("release", MavenPublication::class.java) {
+                from(components.getByName("release"))
+                groupId = "net.theluckycoder"
+                artifactId = "kompress"
+                version = "0.5.1"
+            }
+        }
+    }
+}
