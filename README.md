@@ -4,9 +4,21 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/vipulasri/Timeline-View/blob/master/LICENSE)
 
 Kompress is a port of the [Apache Compress](https://github.com/apache/commons-compress) library to be usable on Android 4.1 and above.
-Besides rewriting the project Kotlin and adding support for older Android Versions, this lightweight version only supports Zip files. 
+Besides rewriting the project Kotlin and adding support for older Android Versions, this lightweight version only supports Zip files.
+
+On top of that the parallel API has been rewritten to use Kotlin Coroutines.
 
 ## Usage
+
+Add the following to dependency to `build.gradle`:
+
+```gradle
+dependencies {
+   implementation 'com.github.TheLuckyCoder:Kompress:v0.5.0'
+}
+```
+
+Here are some [Examples](https://github.com/TheLuckyCoder/Kompress/blob/main/app/src/main/java/net/theluckycoder/kompresstest/test/ZipExample.kt) using the most basic APIs.
 
 ## License
 

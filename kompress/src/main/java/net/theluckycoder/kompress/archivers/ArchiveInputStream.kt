@@ -16,7 +16,9 @@ import java.io.InputStream
  *
  */
 public abstract class ArchiveInputStream : InputStream() {
+
     private val single = ByteArray(1)
+
     /**
      * Returns the current number of bytes read from this stream.
      * @return the number of read bytes
@@ -33,14 +35,7 @@ public abstract class ArchiveInputStream : InputStream() {
      */
     @Throws(IOException::class)
     public abstract fun getNextEntry(): ArchiveEntry?
-    /*
-     * Note that subclasses also implement specific get() methods which
-     * return the appropriate class without need for a cast.
-     * See SVN revision r743259
-     * @return
-     * @throws IOException
-     */
-    // public abstract XXXArchiveEntry getNextXXXEntry() throws IOException;
+
     /**
      * Reads a byte of data. This method will block until enough input is
      * available.
