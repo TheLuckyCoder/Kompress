@@ -4,6 +4,9 @@ plugins {
     id("maven-publish")
 }
 
+group = "net.theluckycoder"
+version = "0.5.1"
+
 repositories {
     mavenCentral()
     google()
