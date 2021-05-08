@@ -13,6 +13,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.theluckycoder.kompresstest.test.ZipExample
 import java.io.File
+import java.lang.StringBuilder
+import kotlin.time.ExperimentalTime
 
 class MainActivity : Activity() {
 
@@ -40,10 +42,7 @@ class MainActivity : Activity() {
             FILE_SELECT_CODE -> if (resultCode == RESULT_OK) {
                 // Get the Uri of the selected file
                 data.data?.let { uri ->
-                    GlobalScope.launch(Dispatchers.Main.immediate) {
-                        val unzipResult = unzip(uri)
-                        findViewById<TextView>(R.id.tvResult).text = unzipResult
-                    }
+                    unzip(uri)
                 }
             }
         }
@@ -51,31 +50,61 @@ class MainActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    private suspend fun unzip(fileUri: Uri): String = withContext(Dispatchers.IO) {
-        try {
-            filesDir.deleteRecursively()
+    @OptIn(ExperimentalTime::class)
+    private fun unzip(fileUri: Uri) = GlobalScope.launch(Dispatchers.Main.immediate) {
+        val tvResult = findViewById<TextView>(R.id.tvResult)
+        val resultString = StringBuffer()
 
-            val name = fileUri.readDisplayName()
-            val newPackFile = File(filesDir, name!!)
-
-            contentResolver.openInputStream(fileUri)
-                ?.copyTo(newPackFile.outputStream(), DEFAULT_BUFFER_SIZE * 8)
-
-            val unzippedFolder = File(filesDir, "unzipped/")
-
-            unzippedFolder.deleteRecursively()
-            ZipExample.unzipUsingZipFile(newPackFile, unzippedFolder)
-
-            unzippedFolder.deleteRecursively()
-            ZipExample.unzipUsingZipArchiveStream(newPackFile, unzippedFolder)
-
-            ZipExample.unzipAsync(Dispatchers.Default, newPackFile, unzippedFolder)
-
-            ZipExample.filesToZipAsync(Dispatchers.Default, unzippedFolder, File(filesDir, "result.zip"))
-            "All Tests passed successfully on this zip file"
-        } catch (e: Exception) {
-            e.stackTraceToString()
+        suspend fun displayString(append: String) {
+            withContext(Dispatchers.Main.immediate) {
+                resultString.append(append)
+                tvResult.text = resultString.toString()
+            }
         }
+
+        displayString("Test started\n")
+
+        val finalMessage = withContext(Dispatchers.IO) {
+            try {
+                filesDir.deleteRecursively()
+
+                val name = fileUri.readDisplayName()
+                val newPackFile = File(filesDir, name!!)
+
+                contentResolver.openInputStream(fileUri)
+                    ?.copyTo(newPackFile.outputStream(), DEFAULT_BUFFER_SIZE * 8)
+
+                val unzippedFolder = File(filesDir, "unzipped/")
+
+                unzippedFolder.deleteRecursively()
+                var duration = ZipExample.unzipUsingZipFile(newPackFile, unzippedFolder)
+                displayString("Unzip using ZipFile: $duration\n")
+
+                unzippedFolder.deleteRecursively()
+                duration = ZipExample.unzipUsingZipArchiveStream(newPackFile, unzippedFolder)
+                displayString("Unzip using Stream: $duration\n")
+
+                duration = ZipExample.unzipAsync(
+                    Dispatchers.Default, // We don't pass Dispatchers.IO because we want to maintain a limited number of threads
+                    newPackFile,
+                    unzippedFolder
+                )
+                displayString("Unzip using ZipFile Async: $duration\n")
+
+                duration = ZipExample.filesToZipAsync(
+                    Dispatchers.Default,
+                    unzippedFolder,
+                    File(filesDir, "result.zip")
+                )
+                displayString("Unzip Async: $duration\n")
+
+                "All Tests passed successfully on this zip file"
+            } catch (e: Exception) {
+                e.stackTraceToString()
+            }
+        }
+
+        displayString(finalMessage)
     }
 
     private fun Uri.readDisplayName(): String? {

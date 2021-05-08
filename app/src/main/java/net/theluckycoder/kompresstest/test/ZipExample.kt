@@ -15,7 +15,11 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureTimeMillis
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
+@ExperimentalTime
 object ZipExample {
 
     suspend fun filesToZipAsync(
@@ -32,7 +36,7 @@ object ZipExample {
             .filter { it.isFile && it.canRead() }
             .toList()
 
-        val time = measureTimeMillis {
+        val time = measureTime {
             ZipArchiveOutputStream(destinationFile.outputStream()).use { zipArchiveOutputStream ->
                 val zipCreator = AsyncScatterZipCreator(coroutineContext)
                 val srcFolderPathLength = sourceFolder.absolutePath.length + 1 // +1 to remove the last file separator
@@ -61,6 +65,7 @@ object ZipExample {
         }
 
         Log.v("Zip Time (Async)", time.toString())
+        time
     }
 
     suspend fun unzipAsync(
@@ -74,7 +79,7 @@ object ZipExample {
 
         val destCanonicalPath = destinationFolder.canonicalPath
 
-        val time = measureTimeMillis {
+        val time = measureTime {
             ZipFile(zipFile).use { zip ->
                 zip.getEntries()
                     .asSequence()
@@ -116,14 +121,15 @@ object ZipExample {
         }
 
         Log.v("Unzip Time (Async)", time.toString())
+        time
     }
 
-    fun unzipUsingZipArchiveStream(zipFile: File, destinationFolder: File) {
+    fun unzipUsingZipArchiveStream(zipFile: File, destinationFolder: File): Duration {
         require(zipFile.isFile)
         if (!destinationFolder.exists())
             destinationFolder.mkdirs()
 
-        val time = measureTimeMillis {
+        val time = measureTime {
             ZipArchiveInputStream(zipFile.inputStream().buffered()).use { archive ->
                 while (true) {
                     val entry = archive.getNextEntry() ?: break
@@ -142,16 +148,16 @@ object ZipExample {
             }
         }
 
-
         Log.v("Unzip Time (Stream)", time.toString())
+        return time
     }
 
-    fun unzipUsingZipFile(zipFile: File, destinationFolder: File) {
+    fun unzipUsingZipFile(zipFile: File, destinationFolder: File): Duration {
         require(zipFile.isFile)
         if (!destinationFolder.exists())
             destinationFolder.mkdirs()
 
-        val time = measureTimeMillis {
+        val time = measureTime {
             ZipFile(zipFile).use { zip ->
                 zip.getEntries()
                     .asSequence()
@@ -160,7 +166,7 @@ object ZipExample {
                     .forEach { zipArchiveEntry ->
                         zip.getInputStream(zipArchiveEntry)?.use { input ->
 
-                            val entryFile = File(destinationFolder, zipArchiveEntry.getName())
+                            val entryFile = File(destinationFolder, zipArchiveEntry.name)
                             entryFile.parentFile?.let { parent ->
                                 if (!parent.exists())
                                     parent.mkdirs()
@@ -173,5 +179,6 @@ object ZipExample {
         }
 
         Log.v("Unzip Time (File)", time.toString())
+        return time
     }
 }
